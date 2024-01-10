@@ -12,8 +12,6 @@ import (
 type CloudFrontCachePolicy struct {
 	svc              *cloudfront.CloudFront
 	ID               *string
-	Name             *string
-	lastModifiedTime *time.Time
 }
 
 func init() {
@@ -35,12 +33,12 @@ func ListCloudFrontCachePolicies(sess *session.Session) ([]Resource, error) {
 		}
 
 		for _, item := range resp.CachePolicyList.Items {
-			resources = append(resources, &CloudFrontKeyGroup{
-				svc:              svc,
-				ID:               item.CachePolicy.Id,
-				name:             item.CachePolicy.CachePolicyConfig.Name,
-				lastModifiedTime: item.CachePolicy.LastModifiedTime,
-			})
+			if *item.Type == "custom" {
+				resources = append(resources, &CloudFrontCachePolicy{
+					svc:              svc,
+					ID:               item.CachePolicy.Id,
+				})
+			}
 		}
 
 		if resp.CachePolicyList.NextMarker == nil {
@@ -72,7 +70,5 @@ func (f *CloudFrontCachePolicy) Remove() error {
 func (f *CloudFrontCachePolicy) Properties() types.Properties {
 	properties := types.NewProperties()
 	properties.Set("ID", f.ID)
-	properties.Set("Name", f.Name)
-	properties.Set("LastModifiedTime", f.lastModifiedTime.Format(time.RFC3339))
 	return properties
 }
